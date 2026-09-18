@@ -17,11 +17,21 @@ class DemoBookingSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing']) && ! env('SEED_DEMO_DATA', false)) {
+            return;
+        }
+
+        $demoPassword = env('DEMO_PASSWORD');
+
+        if (! $demoPassword) {
+            return;
+        }
+
         $customer = User::updateOrCreate(
             ['email' => 'demo@example.com'],
             [
                 'name' => 'Jane Doe',
-                'password' => Hash::make('password'),
+                'password' => Hash::make($demoPassword),
                 'is_admin' => false,
             ]
         );

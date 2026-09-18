@@ -1,3 +1,12 @@
+FROM node:22-alpine AS frontend
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY resources ./resources
+COPY vite.config.js ./
+RUN npm run build
+
 FROM php:8.2-fpm-alpine
 
 # Install system dependencies and PHP extensions
@@ -26,6 +35,7 @@ WORKDIR /var/www
 
 # Copy project files
 COPY . .
+COPY --from=frontend /app/public/build ./public/build
 
 # Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader
@@ -69,19 +79,11 @@ RUN echo "clear_env = no" >> /usr/local/etc/php-fpm.d/www.conf
 
 EXPOSE 10000
 
-# Maps Railway environment names to Laravel names dynamically, clears cache, runs migrations, and boots
-# Runs migrations FIRST to build the tables, then safely flushes the cache and boots the server
+# Uses the hosting provider's environment variables directly. Configure the database
+# before starting this container; migrations are applied before the web server starts.
 CMD ["sh", "-c", " \
-    rm -f .env bootstrap/cache/config.php && \
-    export DB_CONNECTION=mysql && \
-    if [ ! -z \"$MYSQLHOST\" ]; then export DB_HOST=$MYSQLHOST; fi && \
-    if [ ! -z \"$MYSQLPORT\" ]; then export DB_PORT=$MYSQLPORT; fi && \
-    if [ ! -z \"$MYSQLUSER\" ]; then export DB_USERNAME=$MYSQLUSER; fi && \
-    if [ ! -z \"$MYSQLPASSWORD\" ]; then export DB_PASSWORD=$MYSQLPASSWORD; fi && \
-    if [ ! -z \"$MYSQLDATABASE\" ]; then export DB_DATABASE=$MYSQLDATABASE; fi && \
     php artisan migrate --force && \
-    php artisan config:clear && \
-    php artisan cache:clear && \
+    php artisan config:cache && \
     php-fpm -D && \
     nginx -g 'daemon off;' \
 "]

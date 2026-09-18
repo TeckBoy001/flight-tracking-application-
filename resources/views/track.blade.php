@@ -183,10 +183,15 @@
                             const hasDeparture = hasCoordinates(depLat) && hasCoordinates(depLng);
                             const hasArrival = hasCoordinates(arrLat) && hasCoordinates(arrLng);
                             const center = hasCurrent ? [curLat, curLng] : (hasDeparture ? [depLat, depLng] : [20, 0]);
+                            if (typeof L === 'undefined') {
+                                document.getElementById('tracking-map').innerHTML = '<div class="p-4 text-sm text-gray-500">The map could not load. Flight details remain available below.</div>';
+                                return;
+                            }
+
                             const map = L.map('tracking-map', { scrollWheelZoom: false }).setView(center, 4);
 
-                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                attribution: '&copy; OpenStreetMap contributors',
+                            L.tileLayer(@json(config('services.map.tile_url')), {
+                                attribution: @json(config('services.map.attribution')),
                                 maxZoom: 18,
                             }).addTo(map);
 

@@ -63,8 +63,13 @@
 
             const map = L.map('location-map').setView([startLat, startLng], (curLatInput.value ? 5 : 2));
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
+            if (typeof L === 'undefined') {
+                document.getElementById('location-map').innerHTML = '<div class="p-4 text-sm text-gray-500">The map could not load. Enter the coordinates manually.</div>';
+                return;
+            }
+
+            L.tileLayer(@json(config('services.map.tile_url')), {
+                attribution: @json(config('services.map.attribution')),
                 maxZoom: 18,
             }).addTo(map);
 

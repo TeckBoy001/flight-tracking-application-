@@ -8,10 +8,13 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([
-            AdminUserSeeder::class,
-            FlightSeeder::class,
-            DemoBookingSeeder::class,
-        ]);
+        $this->call(AdminUserSeeder::class);
+
+        if (app()->environment(['local', 'testing']) || env('SEED_DEMO_DATA', false)) {
+            $this->call([
+                FlightSeeder::class,
+                DemoBookingSeeder::class,
+            ]);
+        }
     }
 }
