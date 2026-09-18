@@ -79,6 +79,8 @@ EXPOSE 10000
 CMD ["sh", "-c", " \
     rm -f .env bootstrap/cache/config.php && \
     php artisan migrate --force && \
+    rm -rf public/storage && \
+    php artisan storage:link && \
     php artisan config:cache && \
     php-fpm -D && \
     nginx -g 'daemon off;' \

@@ -63,15 +63,24 @@ From the project root:
 
 ```bash
 composer install --no-dev --prefer-dist --optimize-autoloader
-cp .env.example .env
-php artisan key:generate --force
 npm install
 npm run build
 php artisan migrate --force
+rm -rf public/storage
 php artisan storage:link
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+```
+
+Run `php artisan key:generate --force` only once when creating a new `.env` with no `APP_KEY`. For an existing production installation, set the original `APP_KEY` in the hosting provider and never regenerate it during deployment; changing it invalidates encrypted sessions and other encrypted application data. Removing only `public/storage` before `storage:link` makes redeploys safe when the link already exists.
+
+On Windows PowerShell, copy the environment template with:
+
+```powershell
+Copy-Item .env.example .env
+Remove-Item -LiteralPath public/storage -Force -ErrorAction SilentlyContinue
+php artisan storage:link
 ```
 
 Point the web server at `public/`. Run a queue worker only if queued jobs are introduced:
