@@ -64,7 +64,9 @@ RUN mkdir -p /var/www/storage/framework/cache/data \
 RUN chown -R www-data:www-data /var/www && \
     chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
+# Fix the PHP-FPM environment variables block trap
+RUN sed -i 's/;clear_env = no/clear_env = no/g' /usr/local/etc/php-fpm.d/www.conf
+
 EXPOSE 10000
 
 CMD ["sh", "-c", "php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
-
