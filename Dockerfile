@@ -46,6 +46,7 @@ RUN mkdir -p /run/nginx && \
             } \
             location ~ \.php$ { \
                 fastcgi_pass 127.0.0.1:9000; \
+                fastcgi_index index.php; \
                 fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
                 include fastcgi_params; \
             } \
@@ -53,9 +54,17 @@ RUN mkdir -p /run/nginx && \
         } \
     }' > /etc/nginx/nginx.conf
 
-# Set permissions for Laravel storage
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Pre-create all missing Laravel storage subdirectories ahead of time
+RUN mkdir -p /var/www/storage/framework/cache/data \
+             /var/www/storage/framework/sessions \
+             /var/www/storage/framework/views \
+             /var/www/storage/logs
+
+# Set exact permissions for the www-data user across the entire folder
+RUN chown -R www-data:www-data /var/www && \
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
+
