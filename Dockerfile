@@ -69,5 +69,5 @@ RUN echo "clear_env = no" >> /usr/local/etc/php-fpm.d/www.conf
 
 EXPOSE 10000
 
-# Clears hardcoded configuration cache, runs database migrations, and boots the application
-CMD ["sh", "-c", "rm -f bootstrap/cache/config.php && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
+# Explicitly sets mysql connection, clears configuration cache, runs database migrations, and boots the application
+CMD ["sh", "-c", "export DB_CONNECTION=mysql && rm -f bootstrap/cache/config.php && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
