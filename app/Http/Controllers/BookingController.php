@@ -33,8 +33,8 @@ class BookingController extends Controller
             // Lock the row to avoid overselling seats under concurrent bookings.
             $lockedFlight = Flight::where('id', $flight->id)->lockForUpdate()->firstOrFail();
 
-            if ($lockedFlight->is_cancelled) {
-                abort(422, 'This flight has been cancelled and cannot be booked.');
+            if ($lockedFlight->is_cancelled || ! in_array($lockedFlight->status, ['confirmed', 'checked_in', 'boarding'], true)) {
+                abort(422, 'This flight is no longer available for booking.');
             }
 
             if ($lockedFlight->seats_available < $validated['seats_booked']) {
@@ -73,8 +73,10 @@ class BookingController extends Controller
 
         if ($booking->status === 'confirmed') {
             DB::transaction(function () use ($booking) {
+                $booking = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+                $flight = $booking->flight()->lockForUpdate()->firstOrFail();
                 $booking->update(['status' => 'cancelled']);
-                $booking->flight()->increment('seats_available', $booking->seats_booked);
+                $flight->increment('seats_available', $booking->seats_booked);
             });
         }
 

@@ -18,14 +18,23 @@ class TrackController extends Controller
             'booking_reference' => 'required|string',
         ]);
 
-        $reference = trim($validated['booking_reference']);
+        $reference = strtoupper(trim($validated['booking_reference']));
 
         $booking = Booking::with(['flight.locationHistory'])
-            ->where('booking_reference', $reference)
+            ->whereRaw('upper(booking_reference) = ?', [$reference])
             ->first();
+
+        $flight = $booking?->flight;
+
+        if (! $booking && str_starts_with($reference, 'FLY-')) {
+            $flight = \App\Models\Flight::with('locationHistory')
+                ->whereRaw('upper(tracking_code) = ?', [$reference])
+                ->first();
+        }
 
         return view('track', [
             'booking' => $booking,
+            'flight' => $flight,
             'searched' => true,
             'searchedReference' => $reference,
         ]);

@@ -38,9 +38,9 @@
     </div>
 
     @if(!empty($searched))
-        @if($booking)
+        @if($flight ?? $booking?->flight)
             @php
-                $flight = $booking->flight;
+                $flight = $flight ?? $booking->flight;
                 $stages = \App\Models\Flight::TIMELINE_STAGES;
                 $currentIndex = $flight->timelineIndex();
             @endphp
@@ -150,10 +150,17 @@
                 <div class="bg-white border rounded-2xl shadow-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                         <div class="text-xs text-gray-400 mb-1">Tracking Code</div>
-                        <div class="font-mono text-lg font-bold tracking-widest">{{ $booking->booking_reference }}</div>
+                        <div class="font-mono text-lg font-bold tracking-widest">{{ $booking?->booking_reference ?? $flight->tracking_code }}</div>
+                        @if($booking)
+                            <div class="text-xs text-gray-500 mt-1">Flight code: <span class="font-mono">{{ $flight->tracking_code }}</span></div>
+                        @endif
                     </div>
                     <div class="text-sm text-gray-500">
-                        Passenger: <span class="font-medium text-gray-800">{{ $booking->passenger_name }}</span>
+                            @if($booking)
+                                Passenger: <span class="font-medium text-gray-800">{{ $booking->passenger_name }}</span>
+                            @else
+                                Flight tracking code: <span class="font-medium text-gray-800">{{ $flight->tracking_code }}</span>
+                            @endif
                     </div>
                 </div>
             </div>
@@ -171,7 +178,11 @@
                             const curLng = {{ $flight->current_longitude ?? 'null' }};
                             const trail = @json($flight->locationHistory->map(fn ($p) => [(float) $p->latitude, (float) $p->longitude]));
 
-                            const center = curLat && curLng ? [curLat, curLng] : (depLat && depLng ? [depLat, depLng] : [20, 0]);
+                            const hasCoordinates = value => value !== null && value !== undefined;
+                            const hasCurrent = hasCoordinates(curLat) && hasCoordinates(curLng);
+                            const hasDeparture = hasCoordinates(depLat) && hasCoordinates(depLng);
+                            const hasArrival = hasCoordinates(arrLat) && hasCoordinates(arrLng);
+                            const center = hasCurrent ? [curLat, curLng] : (hasDeparture ? [depLat, depLng] : [20, 0]);
                             const map = L.map('tracking-map', { scrollWheelZoom: false }).setView(center, 4);
 
                             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -197,21 +208,21 @@
                             const originLabel = @json($flight->origin);
                             const destinationLabel = @json($flight->destination);
 
-                            if (depLat && depLng) {
+                            if (hasDeparture) {
                                 L.marker([depLat, depLng], { icon: airportIcon }).addTo(map).bindTooltip(originLabel);
                                 bounds.push([depLat, depLng]);
                             }
-                            if (arrLat && arrLng) {
+                            if (hasArrival) {
                                 L.marker([arrLat, arrLng], { icon: airportIcon }).addTo(map).bindTooltip(destinationLabel);
                                 bounds.push([arrLat, arrLng]);
                             }
-                            if (depLat && depLng && arrLat && arrLng) {
+                            if (hasDeparture && hasArrival) {
                                 L.polyline([[depLat, depLng], [arrLat, arrLng]], { color: '#94a3b8', weight: 2, dashArray: '6 6' }).addTo(map);
                             }
                             if (trail.length > 1) {
                                 L.polyline(trail, { color: '#1d4ed8', weight: 3, opacity: 0.6 }).addTo(map);
                             }
-                            if (curLat && curLng) {
+                            if (hasCurrent) {
                                 L.marker([curLat, curLng], { icon: planeIcon }).addTo(map).bindTooltip('Current location', { permanent: false });
                                 bounds.push([curLat, curLng]);
                             }

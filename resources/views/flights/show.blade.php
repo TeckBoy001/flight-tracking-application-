@@ -13,6 +13,9 @@
         </div>
 
         <div class="text-3xl font-black text-slate-900 mb-6">{{ $flight->origin }} &rarr; {{ $flight->destination }}</div>
+        <div class="mb-6 rounded-2xl bg-brand-50 border border-brand-100 p-4 text-sm text-brand-900">
+            Track this flight with code <span class="font-mono font-bold">{{ $flight->tracking_code }}</span> from the tracking page.
+        </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6">
             <div class="rounded-2xl bg-slate-50 p-4">
@@ -34,7 +37,7 @@
         </div>
 
         @auth
-            @if(! $flight->is_cancelled && $flight->seats_available > 0)
+            @if(! $flight->is_cancelled && $flight->seats_available > 0 && in_array($flight->status, ['confirmed', 'checked_in', 'boarding'], true) && $flight->departure_time->isFuture())
                 <form method="POST" action="{{ route('bookings.store', $flight) }}" class="border-t border-slate-200 pt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
                     @csrf
                     <div class="md:col-span-2">
@@ -54,7 +57,7 @@
                     </div>
                 </form>
             @else
-                <p class="border-t border-slate-200 pt-6 text-red-600">This flight is not currently available for booking.</p>
+                <p class="border-t border-slate-200 pt-6 text-red-600">This flight is not currently available for booking. Search for another upcoming flight.</p>
             @endif
         @else
             <div class="border-t border-slate-200 pt-6">

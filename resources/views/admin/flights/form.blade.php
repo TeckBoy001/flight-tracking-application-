@@ -20,6 +20,12 @@
         <div class="bg-white border rounded-xl shadow-sm p-6">
             <h2 class="font-semibold mb-4">Flight details</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @if($flight->exists)
+                    <div class="md:col-span-2 rounded-lg bg-gray-50 px-4 py-3 text-sm">
+                        <span class="text-gray-500">Customer tracking code:</span>
+                        <span class="font-mono font-semibold">{{ $flight->tracking_code }}</span>
+                    </div>
+                @endif
                 <div>
                     <label class="block text-sm font-medium mb-1">Flight number</label>
                     <input type="text" name="flight_number" value="{{ old('flight_number', $flight->flight_number) }}" class="w-full border rounded-md px-3 py-2" required>

@@ -27,6 +27,7 @@ class FlightController extends Controller
     {
         $validated = $this->validated($request);
         $validated['seats_available'] = $validated['total_seats'];
+        $validated['tracking_code'] = Flight::generateTrackingCode();
 
         $flight = Flight::create($validated);
 
@@ -43,6 +44,13 @@ class FlightController extends Controller
     public function update(Request $request, Flight $flight)
     {
         $validated = $this->validated($request, $flight);
+        $confirmedSeats = (int) $flight->bookings()->where('status', 'confirmed')->sum('seats_booked');
+
+        if ($validated['total_seats'] < $confirmedSeats) {
+            return back()->withErrors([
+                'total_seats' => 'Total seats cannot be lower than seats already booked.',
+            ])->withInput();
+        }
 
         $locationChanged = (string) $flight->current_latitude !== (string) ($validated['current_latitude'] ?? null)
             || (string) $flight->current_longitude !== (string) ($validated['current_longitude'] ?? null);
@@ -51,7 +59,10 @@ class FlightController extends Controller
             $validated['stops'] = preg_split('/\r\n|\n|,/', $validated['stops']);
         }
 
+        $validated['tracking_code'] = $flight->tracking_code ?: Flight::generateTrackingCode();
+
         $flight->update($validated);
+        $flight->update(['seats_available' => $validated['total_seats'] - $confirmedSeats]);
 
         if ($locationChanged) {
             $this->recordLocationIfPresent($flight, $validated);
@@ -80,7 +91,11 @@ class FlightController extends Controller
 
     protected function recordLocationIfPresent(Flight $flight, array $validated): void
     {
-        if (! empty($validated['current_latitude']) && ! empty($validated['current_longitude'])) {
+        if (array_key_exists('current_latitude', $validated)
+            && array_key_exists('current_longitude', $validated)
+            && $validated['current_latitude'] !== null
+            && $validated['current_longitude'] !== null
+        ) {
             FlightLocation::create([
                 'flight_id' => $flight->id,
                 'latitude' => $validated['current_latitude'],

@@ -15,7 +15,12 @@ class FlightController extends Controller
             'date' => 'nullable|date',
         ]);
 
-        $query = Flight::query()->orderBy('departure_time');
+        $query = Flight::query()
+            ->where('is_cancelled', false)
+            ->where('seats_available', '>', 0)
+            ->whereIn('status', ['confirmed', 'checked_in', 'boarding'])
+            ->where('departure_time', '>=', now())
+            ->orderBy('departure_time');
 
         if (! empty($validated['origin'])) {
             $query->where('origin', $validated['origin']);

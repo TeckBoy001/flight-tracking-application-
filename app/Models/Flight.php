@@ -10,8 +10,17 @@ class Flight extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::creating(function (Flight $flight): void {
+            $flight->status ??= 'confirmed';
+            $flight->tracking_code ??= self::generateTrackingCode();
+        });
+    }
+
     protected $fillable = [
         'flight_number',
+        'tracking_code',
         'airline',
         'origin',
         'destination',
@@ -70,6 +79,15 @@ class Flight extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public static function generateTrackingCode(): string
+    {
+        do {
+            $code = 'FLY-' . strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ'), 0, 3)) . '-' . random_int(100000, 999999);
+        } while (self::where('tracking_code', $code)->exists());
+
+        return $code;
     }
 
     public function locationHistory(): HasMany

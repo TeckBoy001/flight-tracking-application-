@@ -43,32 +43,33 @@ class BookingController extends Controller
         ]);
 
         DB::transaction(function () use ($booking, $validated) {
+            $booking = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+            $flight = $booking->flight()->lockForUpdate()->firstOrFail();
             $oldSeatCount = $booking->seats_booked;
             $newSeatCount = (int) $validated['seats_booked'];
-            $seatDifference = $newSeatCount - $oldSeatCount;
+            $wasConfirmed = $booking->status === 'confirmed';
+            $willBeConfirmed = $validated['status'] === 'confirmed';
+            $availableAfterRelease = $flight->seats_available + ($wasConfirmed ? $oldSeatCount : 0);
 
-            if ($validated['status'] === 'cancelled' && $booking->status !== 'cancelled') {
-                $booking->flight()->increment('seats_available', $oldSeatCount);
+            if ($willBeConfirmed && $availableAfterRelease < $newSeatCount) {
+                abort(422, 'Not enough seats available for this booking change.');
             }
 
-            if ($validated['status'] !== 'cancelled' && $booking->status === 'cancelled') {
-                $booking->flight()->decrement('seats_available', $oldSeatCount);
+            $newAvailable = $flight->seats_available;
+            if ($wasConfirmed) {
+                $newAvailable += $oldSeatCount;
             }
-
-            if ($booking->status === 'confirmed' && $validated['status'] === 'confirmed' && $seatDifference !== 0) {
-                $booking->flight()->decrement('seats_available', $seatDifference);
+            if ($willBeConfirmed) {
+                $newAvailable -= $newSeatCount;
             }
-
-            if ($validated['status'] === 'confirmed' && $booking->status === 'confirmed' && $seatDifference < 0) {
-                $booking->flight()->increment('seats_available', abs($seatDifference));
-            }
+            $flight->update(['seats_available' => $newAvailable]);
 
             $booking->update([
                 'passenger_name' => $validated['passenger_name'],
                 'passenger_email' => $validated['passenger_email'],
                 'seats_booked' => $newSeatCount,
                 'status' => $validated['status'],
-                'total_price' => $booking->flight->price * $newSeatCount,
+                'total_price' => $flight->price * $newSeatCount,
             ]);
         });
 
@@ -83,10 +84,17 @@ class BookingController extends Controller
 
         if ($validated['status'] !== $booking->status) {
             DB::transaction(function () use ($booking, $validated) {
+                $booking = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+                $flight = $booking->flight()->lockForUpdate()->firstOrFail();
+
+                if ($validated['status'] === 'confirmed' && $flight->seats_available < $booking->seats_booked) {
+                    abort(422, 'Not enough seats available to restore this booking.');
+                }
+
                 if ($validated['status'] === 'cancelled') {
-                    $booking->flight()->increment('seats_available', $booking->seats_booked);
-                } elseif ($booking->status === 'cancelled' && $validated['status'] === 'confirmed') {
-                    $booking->flight()->decrement('seats_available', $booking->seats_booked);
+                    $flight->increment('seats_available', $booking->seats_booked);
+                } else {
+                    $flight->decrement('seats_available', $booking->seats_booked);
                 }
 
                 $booking->update(['status' => $validated['status']]);
@@ -98,11 +106,16 @@ class BookingController extends Controller
 
     public function destroy(Booking $booking)
     {
-        if ($booking->status === 'confirmed') {
-            $booking->flight()->increment('seats_available', $booking->seats_booked);
-        }
+        DB::transaction(function () use ($booking) {
+            $booking = Booking::whereKey($booking->id)->lockForUpdate()->firstOrFail();
+            $flight = $booking->flight()->lockForUpdate()->firstOrFail();
 
-        $booking->delete();
+            if ($booking->status === 'confirmed') {
+                $flight->increment('seats_available', $booking->seats_booked);
+            }
+
+            $booking->delete();
+        });
 
         return back()->with('status', 'Booking removed.');
     }
