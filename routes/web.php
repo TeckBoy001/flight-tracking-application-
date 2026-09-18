@@ -10,8 +10,6 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\TrackController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 // ---- Public ----
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -65,23 +63,4 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::patch('/bookings/{booking}', [AdminBookingController::class, 'update'])->name('bookings.update');
     Route::patch('/bookings/{booking}/status', [AdminBookingController::class, 'updateStatus'])->name('bookings.status');
     Route::delete('/bookings/{booking}', [AdminBookingController::class, 'destroy'])->name('bookings.destroy');
-});
-
-// ---- Temporary Automated Admin Setup Hook ----
-Route::get('/setup-admin', function () {
-    $email = 'admin@example.com';
-    
-    // Completely bypasses columns—just checks if user exists, or creates them cleanly
-    $user = User::where('email', $email)->first();
-
-    if (!$user) {
-        User::create([
-            'name' => 'Admin User',
-            'email' => $email,
-            'password' => Hash::make('password123'),
-        ]);
-        return "Admin account created successfully! Try logging in now.";
-    }
-
-    return "Admin account already exists in the database.";
 });

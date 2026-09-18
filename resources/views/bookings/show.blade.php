@@ -41,7 +41,7 @@
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
                 <div class="text-slate-500">Total paid</div>
-                <div class="font-semibold text-slate-900 mt-1">${{ number_format($booking->total_price, 2) }}</div>
+                <div class="font-semibold text-slate-900 mt-1">{{ $booking->flight->currency ?: 'USD' }} {{ number_format($booking->total_price, 2) }}</div>
             </div>
         </div>
 

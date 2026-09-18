@@ -13,10 +13,15 @@ class FlightController extends Controller
             'origin' => 'nullable|string',
             'destination' => 'nullable|string',
             'date' => 'nullable|date',
+            'passengers' => 'nullable|integer|min:1|max:9',
+            'cabin_class' => 'nullable|in:economy,premium_economy,business,first',
+            'airline' => 'nullable|string|max:255',
+            'sort' => 'nullable|in:departure,arrival,price,duration',
         ]);
 
         $query = Flight::query()
             ->where('is_cancelled', false)
+            ->where('is_archived', false)
             ->where('seats_available', '>', 0)
             ->whereIn('status', ['confirmed', 'checked_in', 'boarding'])
             ->where('departure_time', '>=', now())
@@ -33,6 +38,26 @@ class FlightController extends Controller
         if (! empty($validated['date'])) {
             $query->whereDate('departure_time', $validated['date']);
         }
+
+        if (! empty($validated['passengers'])) {
+            $query->where('seats_available', '>=', $validated['passengers']);
+        }
+
+        if (! empty($validated['cabin_class'])) {
+            $query->where('cabin_class', $validated['cabin_class']);
+        }
+
+        if (! empty($validated['airline'])) {
+            $query->where('airline', $validated['airline']);
+        }
+
+        $sort = $validated['sort'] ?? 'departure';
+        $query->orderBy(match ($sort) {
+            'arrival' => 'arrival_time',
+            'price' => 'price',
+            'duration' => 'duration_minutes',
+            default => 'departure_time',
+        });
 
         $flights = $query->paginate(10)->withQueryString();
 

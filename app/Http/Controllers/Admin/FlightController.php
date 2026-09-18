@@ -11,7 +11,23 @@ class FlightController extends Controller
 {
     public function index()
     {
-        $flights = Flight::orderByDesc('departure_time')->paginate(15);
+        $query = Flight::query()->orderByDesc('departure_time');
+
+        if (request()->filled('search')) {
+            $search = request()->string('search');
+            $query->where(function ($builder) use ($search) {
+                $builder->where('flight_number', 'like', "%{$search}%")
+                    ->orWhere('airline', 'like', "%{$search}%")
+                    ->orWhere('origin', 'like', "%{$search}%")
+                    ->orWhere('destination', 'like', "%{$search}%");
+            });
+        }
+
+        if (request()->filled('status')) {
+            $query->where('status', request()->string('status'));
+        }
+
+        $flights = $query->paginate(15)->withQueryString();
 
         return view('admin.flights.index', compact('flights'));
     }
@@ -114,10 +130,17 @@ class FlightController extends Controller
             'airline' => 'required|string|max:255',
             'origin' => 'required|string|max:255',
             'destination' => 'required|string|max:255|different:origin',
+            'departure_city' => 'nullable|string|max:255',
+            'departure_country' => 'nullable|string|max:255',
+            'arrival_city' => 'nullable|string|max:255',
+            'arrival_country' => 'nullable|string|max:255',
             'stops' => 'nullable|string',
             'departure_time' => 'required|date',
             'arrival_time' => 'required|date|after:departure_time',
+            'duration_minutes' => 'nullable|integer|min:1|max:1440',
+            'cabin_class' => 'nullable|in:economy,premium_economy,business,first',
             'price' => 'required|numeric|min:0',
+            'currency' => 'nullable|string|size:3|alpha',
             'total_seats' => 'required|integer|min:1',
 
             'status' => 'required|in:' . implode(',', array_keys(Flight::TIMELINE_STAGES)),
@@ -135,7 +158,14 @@ class FlightController extends Controller
         // read these separately rather than validating them as required.
         $validated['is_delayed'] = $request->boolean('is_delayed');
         $validated['is_cancelled'] = $request->boolean('is_cancelled');
+        $validated['is_archived'] = $request->boolean('is_archived');
         $validated['tracking_paused'] = $request->boolean('tracking_paused');
+        $validated['cabin_class'] = $validated['cabin_class'] ?? 'economy';
+        $validated['currency'] = $validated['currency'] ?? 'USD';
+        $validated['currency'] = strtoupper($validated['currency']);
+        $validated['duration_minutes'] ??= $validated['departure_time'] && $validated['arrival_time']
+            ? (int) round((strtotime($validated['arrival_time']) - strtotime($validated['departure_time'])) / 60)
+            : null;
 
         return $validated;
     }

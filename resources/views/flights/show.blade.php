@@ -13,6 +13,12 @@
         </div>
 
         <div class="text-3xl font-black text-slate-900 mb-6">{{ $flight->origin }} &rarr; {{ $flight->destination }}</div>
+        <div class="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div class="rounded-2xl bg-slate-50 p-4"><div class="text-slate-500">Cabin</div><div class="font-semibold mt-1">{{ str_replace('_', ' ', ucfirst($flight->cabin_class ?: 'economy')) }}</div></div>
+            <div class="rounded-2xl bg-slate-50 p-4"><div class="text-slate-500">Duration</div><div class="font-semibold mt-1">{{ $flight->duration_minutes ? floor($flight->duration_minutes / 60) . 'h ' . ($flight->duration_minutes % 60) . 'm' : 'Schedule managed by admin' }}</div></div>
+            <div class="rounded-2xl bg-slate-50 p-4"><div class="text-slate-500">From</div><div class="font-semibold mt-1">{{ $flight->departure_city ?: $flight->origin }}</div></div>
+            <div class="rounded-2xl bg-slate-50 p-4"><div class="text-slate-500">To</div><div class="font-semibold mt-1">{{ $flight->arrival_city ?: $flight->destination }}</div></div>
+        </div>
         <div class="mb-6 rounded-2xl bg-brand-50 border border-brand-100 p-4 text-sm text-brand-900">
             Track this flight with code <span class="font-mono font-bold">{{ $flight->tracking_code }}</span> from the tracking page.
         </div>
@@ -28,7 +34,7 @@
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
                 <div class="text-slate-500">Price / seat</div>
-                <div class="font-semibold mt-1 text-slate-900">${{ number_format($flight->price, 2) }}</div>
+                <div class="font-semibold mt-1 text-slate-900">{{ $flight->currency ?: 'USD' }} {{ number_format($flight->price, 2) }}</div>
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
                 <div class="text-slate-500">Seats available</div>
@@ -37,7 +43,7 @@
         </div>
 
         @auth
-            @if(! $flight->is_cancelled && $flight->seats_available > 0 && in_array($flight->status, ['confirmed', 'checked_in', 'boarding'], true) && $flight->departure_time->isFuture())
+            @if(! $flight->is_cancelled && ! $flight->is_archived && $flight->seats_available > 0 && in_array($flight->status, ['confirmed', 'checked_in', 'boarding'], true) && $flight->departure_time->isFuture())
                 <form method="POST" action="{{ route('bookings.store', $flight) }}" class="border-t border-slate-200 pt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
                     @csrf
                     <div class="md:col-span-2">

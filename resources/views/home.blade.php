@@ -105,6 +105,20 @@
                 <label class="block text-sm font-medium mb-1 text-slate-700">Date</label>
                 <input type="date" name="date" class="w-full border border-slate-200 rounded-md px-3 py-2.5 focus:border-brand-500 focus:outline-none">
             </div>
+            <div>
+                <label class="block text-sm font-medium mb-1 text-slate-700">Passengers</label>
+                <input type="number" name="passengers" min="1" max="9" value="1" class="w-full border border-slate-200 rounded-md px-3 py-2.5 focus:border-brand-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1 text-slate-700">Cabin</label>
+                <select name="cabin_class" class="w-full border border-slate-200 rounded-md px-3 py-2.5 focus:border-brand-500 focus:outline-none">
+                    <option value="">Any cabin</option>
+                    <option value="economy">Economy</option>
+                    <option value="premium_economy">Premium economy</option>
+                    <option value="business">Business</option>
+                    <option value="first">First</option>
+                </select>
+            </div>
             <div class="flex items-end">
                 <button class="w-full bg-brand-500 text-white rounded-md px-4 py-2.5 font-semibold hover:bg-brand-600 transition">Search flights</button>
             </div>

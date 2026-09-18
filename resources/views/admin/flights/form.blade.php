@@ -42,6 +42,22 @@
                     <label class="block text-sm font-medium mb-1">Destination (airport / city)</label>
                     <input type="text" name="destination" value="{{ old('destination', $flight->destination) }}" class="w-full border rounded-md px-3 py-2" required>
                 </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Departure city</label>
+                    <input type="text" name="departure_city" value="{{ old('departure_city', $flight->departure_city) }}" class="w-full border rounded-md px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Departure country</label>
+                    <input type="text" name="departure_country" value="{{ old('departure_country', $flight->departure_country) }}" class="w-full border rounded-md px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Arrival city</label>
+                    <input type="text" name="arrival_city" value="{{ old('arrival_city', $flight->arrival_city) }}" class="w-full border rounded-md px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Arrival country</label>
+                    <input type="text" name="arrival_country" value="{{ old('arrival_country', $flight->arrival_country) }}" class="w-full border rounded-md px-3 py-2">
+                </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium mb-1">Mid-flight stops</label>
                     <textarea name="stops" rows="3" class="w-full border rounded-md px-3 py-2" placeholder="One stop per line or comma-separated">{{ old('stops', implode("\n", $flight->stops ?? [])) }}</textarea>
@@ -56,8 +72,24 @@
                     <input type="datetime-local" name="arrival_time" value="{{ old('arrival_time', optional($flight->arrival_time)->format('Y-m-d\TH:i')) }}" class="w-full border rounded-md px-3 py-2" required>
                 </div>
                 <div>
+                    <label class="block text-sm font-medium mb-1">Duration (minutes)</label>
+                    <input type="number" min="1" max="1440" name="duration_minutes" value="{{ old('duration_minutes', $flight->duration_minutes) }}" class="w-full border rounded-md px-3 py-2" placeholder="Calculated if empty">
+                </div>
+                <div>
                     <label class="block text-sm font-medium mb-1">Price</label>
                     <input type="number" step="0.01" min="0" name="price" value="{{ old('price', $flight->price) }}" class="w-full border rounded-md px-3 py-2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Currency</label>
+                    <input type="text" name="currency" maxlength="3" value="{{ old('currency', $flight->currency ?? 'USD') }}" class="w-full border rounded-md px-3 py-2 uppercase" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Cabin / class</label>
+                    <select name="cabin_class" class="w-full border rounded-md px-3 py-2">
+                        @foreach(['economy' => 'Economy', 'premium_economy' => 'Premium economy', 'business' => 'Business', 'first' => 'First'] as $value => $label)
+                            <option value="{{ $value }}" @selected(old('cabin_class', $flight->cabin_class ?? 'economy') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Total seats</label>
@@ -95,6 +127,10 @@
                     <label class="flex items-center gap-2 text-sm">
                         <input type="checkbox" name="tracking_paused" value="1" @checked(old('tracking_paused', $flight->tracking_paused ?? false))>
                         Pause live tracking
+                    </label>
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" name="is_archived" value="1" @checked(old('is_archived', $flight->is_archived ?? false))>
+                        Archive from customer search
                     </label>
                 </div>
             </div>

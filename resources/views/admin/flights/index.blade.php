@@ -8,6 +8,17 @@
         <a href="{{ route('admin.flights.create') }}" class="bg-indigo-600 text-white rounded-md px-4 py-2 hover:bg-indigo-700">+ New Flight</a>
     </div>
 
+    <form method="GET" class="bg-white border rounded-xl shadow-sm p-4 mb-6 flex flex-wrap gap-3">
+        <input type="search" name="search" value="{{ request('search') }}" placeholder="Search flight, airline, or route" class="border rounded-md px-3 py-2 flex-1 min-w-56">
+        <select name="status" class="border rounded-md px-3 py-2">
+            <option value="">All statuses</option>
+            @foreach(\App\Models\Flight::TIMELINE_STAGES as $value => $label)
+                <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
+            @endforeach
+        </select>
+        <button class="bg-indigo-600 text-white rounded-md px-4 py-2 hover:bg-indigo-700">Filter</button>
+    </form>
+
     <div class="bg-white border rounded-xl shadow-sm overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-left text-gray-500">
@@ -27,12 +38,13 @@
                     <tr>
                         <td class="p-3 font-mono">{{ $flight->flight_number }}</td>
                         <td class="p-3">{{ $flight->airline }}</td>
-                        <td class="p-3">{{ $flight->origin }} &rarr; {{ $flight->destination }}</td>
+                        <td class="p-3">{{ $flight->origin }} &rarr; {{ $flight->destination }}<br><span class="text-xs text-gray-400">{{ $flight->departure_city }} to {{ $flight->arrival_city }}</span></td>
                         <td class="p-3">{{ $flight->departure_time->format('M j, g:i A') }}</td>
-                        <td class="p-3">${{ number_format($flight->price, 2) }}</td>
+                        <td class="p-3">{{ $flight->currency }} {{ number_format($flight->price, 2) }}<br><span class="text-xs text-gray-400">{{ str_replace('_', ' ', ucfirst($flight->cabin_class)) }}</span></td>
                         <td class="p-3">{{ $flight->seats_available }}/{{ $flight->total_seats }}</td>
                         <td class="p-3">
                             <span class="text-xs px-2 py-0.5 rounded-full {{ $flight->statusColor() }}">{{ $flight->badgeLabel() }}</span>
+                            @if($flight->is_archived)<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">Archived</span>@endif
                         </td>
                         <td class="p-3 text-right whitespace-nowrap">
                             <a href="{{ route('admin.flights.bookings', $flight) }}" class="text-gray-500 hover:underline">Bookings</a>
