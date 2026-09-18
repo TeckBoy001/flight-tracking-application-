@@ -144,7 +144,7 @@
                 <div class="flex gap-3">
                     <div class="flex-1">
                         <label class="block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Tracking code</label>
-                        <input value="KOH-482951" class="mt-2 w-full border border-slate-200 rounded-md px-3 py-2.5 font-mono tracking-[0.2em]" />
+                        <input value="" placeholder="e.g. FLY-ABC-123456" class="mt-2 w-full border border-slate-200 rounded-md px-3 py-2.5 font-mono tracking-[0.2em]" />
                     </div>
                     <button class="self-end bg-slate-900 text-white px-4 py-2.5 rounded-md font-semibold">Track</button>
                 </div>

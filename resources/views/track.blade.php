@@ -26,7 +26,7 @@
                 type="text"
                 name="booking_reference"
                 value="{{ $searchedReference ?? old('booking_reference') }}"
-                placeholder="e.g. KOH-482951"
+                placeholder="e.g. FLY-ABC-123456"
                 class="flex-1 border rounded-lg px-4 py-3 text-center sm:text-left tracking-widest font-mono uppercase focus:outline-none focus:ring-2 focus:ring-sky-950"
                 required
                 autofocus
