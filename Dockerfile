@@ -69,5 +69,18 @@ RUN echo "clear_env = no" >> /usr/local/etc/php-fpm.d/www.conf
 
 EXPOSE 10000
 
-# Deletes committed environment settings, clears configuration cache, runs migrations, and boots
-CMD ["sh", "-c", "rm -f .env bootstrap/cache/config.php && export DB_CONNECTION=mysql && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
+# Maps Railway environment names to Laravel names dynamically, clears cache, runs migrations, and boots
+CMD ["sh", "-c", " \
+    rm -f .env bootstrap/cache/config.php && \
+    export DB_CONNECTION=mysql && \
+    if [ ! -z \"$MYSQLHOST\" ]; then export DB_HOST=$MYSQLHOST; fi && \
+    if [ ! -z \"$MYSQLPORT\" ]; then export DB_PORT=$MYSQLPORT; fi && \
+    if [ ! -z \"$MYSQLUSER\" ]; then export DB_USERNAME=$MYSQLUSER; fi && \
+    if [ ! -z \"$MYSQLPASSWORD\" ]; then export DB_PASSWORD=$MYSQLPASSWORD; fi && \
+    if [ ! -z \"$MYSQLDATABASE\" ]; then export DB_DATABASE=$MYSQLDATABASE; fi && \
+    php artisan config:clear && \
+    php artisan cache:clear && \
+    php artisan migrate --force && \
+    php-fpm -D && \
+    nginx -g 'daemon off;' \
+"]
