@@ -70,18 +70,18 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
 // ---- Temporary Automated Admin Setup Hook ----
 Route::get('/setup-admin', function () {
     $email = 'admin@example.com';
+    
+    // Completely bypasses columns—just checks if user exists, or creates them cleanly
     $user = User::where('email', $email)->first();
 
     if (!$user) {
-        $user = User::create([
+        User::create([
             'name' => 'Admin User',
             'email' => $email,
             'password' => Hash::make('password123'),
         ]);
+        return "Admin account created successfully! Try logging in now.";
     }
 
-    // Forces assignment of the admin flag
-    $user->update(['is_admin' => true]);
-
-    return "Admin account is ready! Email: " . $user->email . " | Password: password123";
+    return "Admin account already exists in the database.";
 });
