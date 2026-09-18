@@ -72,16 +72,11 @@ RUN chown -R www-data:www-data /var/www && \
 # Force PHP-FPM to accept outside environment variables
 RUN echo "clear_env = no" >> /usr/local/etc/php-fpm.d/www.conf
 
+# BAKE THE DEFAULTS DIRECTLY INTO THE DOCKER GLOBAL SCOPE
+ENV DB_CONNECTION=mysql
+ENV SESSION_DRIVER=database
+
 EXPOSE 10000
 
-# Uses the hosting provider's Laravel environment variables directly, then
-# applies migrations and starts the PHP/Nginx runtime.
-CMD ["sh", "-c", " \
-    rm -f .env bootstrap/cache/config.php && \
-    php artisan migrate --force && \
-    rm -rf public/storage && \
-    php artisan storage:link && \
-    php artisan config:cache && \
-    php-fpm -D && \
-    nginx -g 'daemon off;' \
-"]
+# Deletes build-time cached files, ensures runtime variables load, runs migrations, and boots
+CMD ["sh", "-c", "rm -f bootstrap/cache/config.php && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
