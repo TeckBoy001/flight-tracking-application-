@@ -78,5 +78,5 @@ ENV SESSION_DRIVER=database
 
 EXPOSE 10000
 
-# Deletes build-time cached files, ensures runtime variables load, runs migrations, and boots
-CMD ["sh", "-c", "rm -f bootstrap/cache/config.php && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
+# Runs the environment cleanly using your explicit Render dashboard panel variables
+CMD ["sh", "-c", "rm -f .env bootstrap/cache/config.php && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
