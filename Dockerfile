@@ -70,6 +70,7 @@ RUN echo "clear_env = no" >> /usr/local/etc/php-fpm.d/www.conf
 EXPOSE 10000
 
 # Maps Railway environment names to Laravel names dynamically, clears cache, runs migrations, and boots
+# Runs migrations FIRST to build the tables, then safely flushes the cache and boots the server
 CMD ["sh", "-c", " \
     rm -f .env bootstrap/cache/config.php && \
     export DB_CONNECTION=mysql && \
@@ -78,9 +79,9 @@ CMD ["sh", "-c", " \
     if [ ! -z \"$MYSQLUSER\" ]; then export DB_USERNAME=$MYSQLUSER; fi && \
     if [ ! -z \"$MYSQLPASSWORD\" ]; then export DB_PASSWORD=$MYSQLPASSWORD; fi && \
     if [ ! -z \"$MYSQLDATABASE\" ]; then export DB_DATABASE=$MYSQLDATABASE; fi && \
+    php artisan migrate --force && \
     php artisan config:clear && \
     php artisan cache:clear && \
-    php artisan migrate --force && \
     php-fpm -D && \
     nginx -g 'daemon off;' \
 "]
