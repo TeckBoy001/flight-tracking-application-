@@ -1,6 +1,6 @@
 FROM php:8.2-fpm-alpine
 
-# Install system dependencies and PHP extensions
+# Install system dependencies, PHP extensions, Node.js, and npm
 RUN apk add --no-cache \
     nginx \
     shadow \
@@ -13,7 +13,9 @@ RUN apk add --no-cache \
     git \
     curl \
     oniguruma-dev \
-    postgresql-dev
+    postgresql-dev \
+    nodejs \
+    npm
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip gd
@@ -27,8 +29,11 @@ WORKDIR /var/www
 # Copy project files
 COPY . .
 
-# Install Laravel dependencies
+# Install Laravel PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
+
+# Install Node dependencies and compile production assets (Vite)
+RUN npm install && npm run build
 
 # Create the inline Nginx configuration directly inside the container
 RUN mkdir -p /run/nginx && \
