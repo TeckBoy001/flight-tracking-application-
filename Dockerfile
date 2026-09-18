@@ -16,7 +16,7 @@ RUN apk add --no-cache \
     postgresql-dev
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip expc gd
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip gd
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -30,13 +30,32 @@ COPY . .
 # Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Setup Nginx configuration mapping
-RUN mkdir -p /run/nginx
-COPY docker/nginx.conf /etc/nginx/nginx.conf
+# Create the inline Nginx configuration directly inside the container
+RUN mkdir -p /run/nginx && \
+    echo 'events { worker_connections 1024; } \
+    http { \
+        include /etc/nginx/mime.types; \
+        default_type application/octet-stream; \
+        server { \
+            listen 10000; \
+            root /var/www/public; \
+            index index.php index.html; \
+            charset utf-8; \
+            location / { \
+                try_files $uri $uri/ /index.php?$query_string; \
+            } \
+            location ~ \.php$ { \
+                fastcgi_pass 127.0.0.1:9000; \
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
+                include fastcgi_params; \
+            } \
+            error_page 404 /index.php; \
+        } \
+    }' > /etc/nginx/nginx.conf
 
 # Set permissions for Laravel storage
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 10000
 
-CMD nginx && php-fpm
+CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
